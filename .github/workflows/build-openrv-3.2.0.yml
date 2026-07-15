@@ -64,7 +64,11 @@ jobs:
         run: |
           $build = "$env:GITHUB_WORKSPACE\OpenRV\_build"
           $stage = Join-Path $build "stage"
-          if (!(Test-Path $stage)) { throw "OpenRV stage directory not found: $stage" }
+
+          if (!(Test-Path $stage)) {
+            throw "OpenRV stage directory not found: $stage"
+          }
+
           Compress-Archive -Path "$stage\*" -DestinationPath "$env:GITHUB_WORKSPACE\OpenRV-3.2.0-Windows-x64.zip" -Force
 
       - name: Upload OpenRV package
@@ -74,4 +78,3 @@ jobs:
           path: OpenRV-3.2.0-Windows-x64.zip
           if-no-files-found: error
           retention-days: 7
-
