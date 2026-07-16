@@ -74,9 +74,10 @@ jobs:
         conan export openrvcore-conanfile.py openrvcore/1.0.0@aswf/stable
 
         echo "=== Running CMake Configuration ==="
-        # Maps CMake directly to the rock-solid vcpkg layout structure
+        # INJECT THE VCPKG TOOLCHAIN FILE TO AUTOMATICALLY MAP QT6 CONFIG FILES
         cmake -B _build -G "Visual Studio 17 2022" -A x64 \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" \
           -DRV_DEPS_QT_LOCATION="C:/vcpkg/packages/qtbase_x64-windows"
 
         echo "=== Building Project ==="
