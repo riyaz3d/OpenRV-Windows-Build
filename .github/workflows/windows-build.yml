@@ -1,7 +1,7 @@
 name: Cloud Windows OpenRV Build
 
 on:
-  workflow_dispatch: # Allows manual trigger via the Actions tab
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -11,30 +11,32 @@ jobs:
     - name: Checkout OpenRV Source Code
       uses: actions/checkout@v4
       with:
-        repository: 'AcademySoftwareFoundation/OpenRV' # Clones the actual source code
-        ref: 'main' # Or change to 'v3.2.0' if you want a specific legacy version
-        submodules: recursive # Mandated for essential internal modules
+        repository: 'AcademySoftwareFoundation/OpenRV'
+        ref: 'main'
+        submodules: recursive
 
-    # 1. GENERATE CACHE KEY FROM SUBMODULE IDENTIFIERS
     - name: Calculate Submodule Fingerprint
       id: submodule-fingerprint
       shell: bash
       run: |
         echo "hash=${{ hashFiles('.gitmodules', '**/CMakeLists.txt') }}" >> $GITHUB_OUTPUT
 
-    # 2. RESTORE / SAVE COMPILED PIPELINE DEPENDENCIES
-    - name: Cache Build Dependencies & Build Directory
+    - name: Cache Build Dependencies
       uses: actions/cache@v4
       with:
         path: |
           _build
-          .venv
           ~/.cache
         key: ${{ runner.os }}-openrv-${{ steps.submodule-fingerprint.outputs.hash }}
         restore-keys: |
           ${{ runner.os }}-openrv-
 
-    # 3. SET UP LOW-LEVEL PREREQUISITES
+    # FORCE PYTHON 3.11 TO ENSURE PRECOMPILED WHEEL COMPATIBILITY
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
     - name: Install Perl
       uses: shogo82148/actions-setup-perl@v1
       with:
@@ -43,28 +45,18 @@ jobs:
     - name: Setup CMake
       uses: lukka/get-cmake@latest
 
-    # 4. INITIALIZE PLATFORM BUILD PLATFORM ENVIRONMENT
     - name: Set Environment Paths
       shell: bash
       run: |
         echo "RV_DEPS_WIN_PERL_ROOT=C:\strawberry\perl\bin" >> $GITHUB_ENV
 
-    # 5. MODERN CONAN & CMAKE COMPILATION
     - name: Execute Bootstrapping & Compilation
       shell: bash
       run: |
         echo "=== Installing Build Prerequisites ==="
         python -m pip install --upgrade pip
         python -m pip install "setuptools<70.0.0" "wheel"
-
-        # INJECT PYYAML PATCH CONSTAINTS FOR PYTHON 3.12
-        echo "pyyaml>=6.0.1" > constraints.txt
-        export PIP_CONSTRAINT=$(pwd)/constraints.txt
-
-        # Install standard requirements
         python -m pip install -r requirements.txt
-        
-        # Install conan with explicit constraints applied to child build processes
         python -m pip install conan==1.60.0
 
         echo "=== Initializing Conan Profiles ==="
@@ -82,7 +74,6 @@ jobs:
         echo "=== Building Project ==="
         cmake --build _build --config Release --parallel 4
 
-    # 6. EXPORT THE FINISHED PRODUCT
     - name: Upload Finished Executable Build
       uses: actions/upload-artifact@v4
       with:
