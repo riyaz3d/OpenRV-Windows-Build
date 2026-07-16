@@ -1,0 +1,70 @@
+name: Cloud Windows OpenRV Build
+
+on:
+  workflow_dispatch: # Allows manual trigger via the Actions tab
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive # Mandatory for internal dependencies
+
+    # 1. GENERATE CACHE KEY FROM SUBMODULE IDENTIFIERS
+    - name: Calculate Submodule Fingerprint
+      id: submodule-fingerprint
+      shell: bash
+      run: |
+        echo "hash=${{ hashFiles('.gitmodules', '**/CMakeLists.txt') }}" >> $GITHUB_OUTPUT
+
+    # 2. RESTORE / SAVE COMPILED PIPELINE DEPENDENCIES
+    - name: Cache Build Dependencies & Build Directory
+      uses: actions/cache@v4
+      with:
+        path: |
+          _build
+          .venv
+          ~/.cache
+        key: ${{ runner.os }}-openrv-${{ steps.submodule-fingerprint.outputs.hash }}
+        restore-keys: |
+          ${{ runner.os }}-openrv-
+
+    # 3. SET UP LOW-LEVEL PREREQUISITES
+    - name: Install Perl
+      uses: shogo82148/actions-setup-perl@v1
+      with:
+        perl-version: '5.38'
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    # 4. INITIALIZE PLATFORM BUILD PLATFORM ENVIRONMENT
+    - name: Set Environment Paths
+      shell: bash
+      run: |
+        echo "RV_DEPS_WIN_PERL_ROOT=C:\strawberry\perl\bin" >> $GITHUB_ENV
+
+    # 5. INTUATIVE COMPILATION TO PREVENT TIMEOUTS
+    - name: Execute Bootstrapping & Compilation
+      shell: bash
+      run: |
+        # Only run bootstrap if the cache did not completely restore it
+        if [ ! -d "_build" ]; then
+          ./rvbootstrap
+        fi
+        
+        # Build OpenRV using CMake with explicit throttling to prevent hardware crashes
+        cmake -B _build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+        
+        # Parallel level 4 strikes the balance between speed and runner RAM ceilings
+        cmake --build _build --config Release --parallel 4
+
+    # 6. EXPORT THE FINISHED PRODUCT
+    - name: Upload Finished Executable Build
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenRV-Windows-CloudBuild
+        path: _build/stage/app/bin/
