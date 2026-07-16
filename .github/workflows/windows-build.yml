@@ -49,13 +49,18 @@ jobs:
       run: |
         echo "RV_DEPS_WIN_PERL_ROOT=C:\strawberry\perl\bin" >> $GITHUB_ENV
 
-    # 5. INTUATIVE COMPILATION TO PREVENT TIMEOUTS
+    # 5. INTUITIVE COMPILATION TO PREVENT TIMEOUTS
     - name: Execute Bootstrapping & Compilation
       shell: bash
       run: |
+        # Print the directory contents to confirm the files exist
+        echo "=== Current Workspace Files ==="
+        ls -la
+        
         # Only run bootstrap if the cache did not completely restore it
         if [ ! -d "_build" ]; then
-          ./rvbootstrap
+          echo "=== Running Bootstrap ==="
+          bash ./rvbootstrap
         fi
         
         # Build OpenRV using CMake with explicit throttling to prevent hardware crashes
