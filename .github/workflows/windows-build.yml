@@ -41,15 +41,15 @@ jobs:
       with:
         perl-version: '5.38'
 
-    # AUTOMATICALLY INSTALL QT6 TO PROVIDE DEPENDENCY BINDINGS
+        # AUTOMATICALLY INSTALL QT6 TO PROVIDE DEPENDENCY BINDINGS
     - name: Install Qt Framework
       uses: jurplel/install-qt-action@v3
       id: qt-setup
       with:
-        version: '6.5.3' # OpenRV main branch builds against Qt 6.x baselines
+        version: '6.5.3'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2022_64'
+        arch: 'win64_msvc2022' # FIXED: Dropped the extra _64 suffix
         cache: true
 
     - name: Setup CMake
