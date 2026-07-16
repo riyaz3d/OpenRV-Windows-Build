@@ -49,24 +49,30 @@ jobs:
       run: |
         echo "RV_DEPS_WIN_PERL_ROOT=C:\strawberry\perl\bin" >> $GITHUB_ENV
 
-    # 5. INTUITIVE COMPILATION TO PREVENT TIMEOUTS
+    # 5. MODERN CONAN & CMAKE COMPILATION
     - name: Execute Bootstrapping & Compilation
       shell: bash
       run: |
-        # Print the directory contents to confirm the files exist
-        echo "=== Current Workspace Files ==="
-        ls -la
-        
-        # Only run bootstrap if the cache did not completely restore it
-        if [ ! -d "_build" ]; then
-          echo "=== Running Bootstrap ==="
-          bash ./rvbootstrap
-        fi
-        
-        # Build OpenRV using CMake with explicit throttling to prevent hardware crashes
+        echo "=== Installing Build Prerequisites ==="
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+        python -m pip install conan==1.60.0  # OpenRV relies heavily on Conan v1 pipelines
+
+        echo "=== Initializing Conan Profiles ==="
+        conan profile new default --detect
+        conan profile update settings.compiler="Visual Studio" default
+        conan profile update settings.compiler.version="17" default
+        conan profile update settings.compiler.runtime="MD" default
+
+        echo "=== Exporting Internal Conan Packages ==="
+        conan export openrvcore-conanfile.py openrvcore/3.2.0@aswf/stable
+
+        echo "=== Running CMake Configuration ==="
+        # Configures and matches the active Visual Studio build flags
         cmake -B _build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
-        
-        # Parallel level 4 strikes the balance between speed and runner RAM ceilings
+
+        echo "=== Building Project ==="
+        # Level 4 parallel threads safe-guards against memory exceptions on the cloud host
         cmake --build _build --config Release --parallel 4
 
     # 6. EXPORT THE FINISHED PRODUCT
