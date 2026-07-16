@@ -8,10 +8,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout Source Code
+    - name: Checkout OpenRV Source Code
       uses: actions/checkout@v4
       with:
-        submodules: recursive # Mandatory for internal dependencies
+        repository: 'AcademySoftwareFoundation/OpenRV' # Clones the actual source code
+        ref: 'main' # Or change to 'v3.2.0' if you want a specific legacy version
+        submodules: recursive # Mandated for essential internal modules
 
     # 1. GENERATE CACHE KEY FROM SUBMODULE IDENTIFIERS
     - name: Calculate Submodule Fingerprint
