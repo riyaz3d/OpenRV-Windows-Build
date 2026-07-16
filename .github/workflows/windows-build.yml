@@ -41,15 +41,15 @@ jobs:
       with:
         perl-version: '5.38'
 
-        # AUTOMATICALLY INSTALL QT6 TO PROVIDE DEPENDENCY BINDINGS
+    # AUTOMATICALLY INSTALL QT6 TO PROVIDE DEPENDENCY BINDINGS
     - name: Install Qt Framework
       uses: jurplel/install-qt-action@v3
       id: qt-setup
       with:
-        version: '6.5.3'
+        version: '6.5.2' # Swapped to a highly stable repository manifest version
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2022' # FIXED: Dropped the extra _64 suffix
+        arch: 'win64_msvc2022'
         cache: true
 
     - name: Setup CMake
