@@ -61,8 +61,8 @@ jobs:
         python -m pip install conan==1.60.0
 
         echo "=== Installing Qt 6 via VCPKG ==="
-        # Compiles qtbase natively on the runner, bypassing broken XML servers completely
-        vcpkg install qtbase:x64-windows
+        # INSTALL BOTH QTBASE AND QTWEBENGINE NATIVELY
+        vcpkg install qtbase:x64-windows qtwebengine:x64-windows
 
         echo "=== Initializing Conan Profiles ==="
         conan profile new default --detect
