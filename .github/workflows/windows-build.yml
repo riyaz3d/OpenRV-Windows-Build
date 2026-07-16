@@ -31,10 +31,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-openrv-
 
-    - name: Setup Python 3.11
+    # DOWNGRADED TO PYTHON 3.10 TO PREVENT CYTHON/WHEEL COMPILATION FAILURES
+    - name: Setup Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.10'
 
     - name: Install Perl
       uses: shogo82148/actions-setup-perl@v1
@@ -43,6 +44,11 @@ jobs:
 
     - name: Setup CMake
       uses: lukka/get-cmake@latest
+
+    - name: Set Environment Paths
+      shell: bash
+      run: |
+        echo "RV_DEPS_WIN_PERL_ROOT=C:\strawberry\perl\bin" >> $GITHUB_ENV
 
     - name: Execute Bootstrapping & Compilation
       shell: bash
@@ -53,9 +59,9 @@ jobs:
         python -m pip install -r requirements.txt
         python -m pip install conan==1.60.0 aqtinstall
 
-        echo "=== Installing Qt 6.5.3 Manually via AQT ==="
-        # Bypasses the broken GitHub action using direct pip distribution binaries
-        python -m aqt install-qt windows desktop 6.5.3 win64_msvc2022 --outputdir $(pwd)/qt6
+        echo "=== Installing Qt 6.5.0 Manually via AQT ==="
+        # USES 6.5.0 TO BYPASS BROKEN COMMERCIAL METADATA MIRRORS
+        python -m aqt install-qt windows desktop 6.5.0 win64_msvc2022 --outputdir $(pwd)/qt6
 
         echo "=== Initializing Conan Profiles ==="
         conan profile new default --detect
@@ -67,10 +73,9 @@ jobs:
         conan export openrvcore-conanfile.py openrvcore/1.0.0@aswf/stable
 
         echo "=== Running CMake Configuration ==="
-        # Points OpenRV to the manually downloaded Qt folder path
         cmake -B _build -G "Visual Studio 17 2022" -A x64 \
           -DCMAKE_BUILD_TYPE=Release \
-          -DRV_DEPS_QT_LOCATION="$(pwd)/qt6/6.5.3/msvc2022_64"
+          -DRV_DEPS_QT_LOCATION="$(pwd)/qt6/6.5.0/msvc2022_64"
 
         echo "=== Building Project ==="
         cmake --build _build --config Release --parallel 4
