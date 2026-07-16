@@ -55,12 +55,16 @@ jobs:
       run: |
         echo "=== Installing Build Prerequisites ==="
         python -m pip install --upgrade pip
-        
-        # DOWNGRADE SETUPTOOLS TO BYPASS PEP 639 LICENSE CHECKS
         python -m pip install "setuptools<70.0.0" "wheel"
-        
-        # Install the repository components safely
+
+        # INJECT PYYAML PATCH CONSTAINTS FOR PYTHON 3.12
+        echo "pyyaml>=6.0.1" > constraints.txt
+        export PIP_CONSTRAINT=$(pwd)/constraints.txt
+
+        # Install standard requirements
         python -m pip install -r requirements.txt
+        
+        # Install conan with explicit constraints applied to child build processes
         python -m pip install conan==1.60.0
 
         echo "=== Initializing Conan Profiles ==="
@@ -76,10 +80,6 @@ jobs:
         cmake -B _build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
 
         echo "=== Building Project ==="
-        cmake --build _build --config Release --parallel 4
-
-        echo "=== Building Project ==="
-        # Level 4 parallel threads safe-guards against memory exceptions on the cloud host
         cmake --build _build --config Release --parallel 4
 
     # 6. EXPORT THE FINISHED PRODUCT
